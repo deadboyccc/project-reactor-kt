@@ -8,18 +8,7 @@ plugins {
 group = "dev.dead"
 version = "0.0.1-SNAPSHOT"
 description = "project-reactor-kt"
-tasks.withType<Test> {
-    testLogging {
-        // Show only the events you care about
-        events("passed", "skipped", "failed")
 
-        // This is the magic line to see your printlns
-        showStandardStreams = true
-
-        // Optional: Make it look even cleaner
-        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-    }
-}
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
@@ -31,14 +20,18 @@ repositories {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-webclient")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")  // ← ADDED
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
-    implementation("tools.jackson.module:jackson-module-kotlin")
-    testImplementation("org.springframework.boot:spring-boot-starter-webclient-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")        // ← FIXED group
+
+    runtimeOnly("com.h2database:h2")                                            // ← ADDED
+    runtimeOnly("io.r2dbc:r2dbc-h2")                                           // ← ADDED
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("io.projectreactor:reactor-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -52,4 +45,9 @@ kotlin {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
 }
