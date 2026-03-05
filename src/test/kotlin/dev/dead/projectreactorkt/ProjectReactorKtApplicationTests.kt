@@ -1,18 +1,19 @@
 package dev.dead.projectreactorkt
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.asPublisher
 import kotlinx.coroutines.reactive.awaitFirst
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.test.test
 import java.time.Duration
+import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
 class ProjectReactorKtApplicationTests {
@@ -130,5 +131,59 @@ class ProjectReactorKtApplicationTests {
     private suspend fun doWork(ms: Long): Int {
         delay(ms)
         return (ms / 10).toInt()
+    }
+    private fun getRandomIntFlow(): Flow<Int> = flow {
+        repeat(20) {
+            emit(Random.nextInt(1, 100))
+            delay(100)
+        }
+
+    }
+
+    @Test
+    fun getFlowOfIntsAndRunInParallel(): Unit = runBlocking {
+        getRandomIntFlow().filter { it > 10 }
+
+            .flowOn(Dispatchers.IO)
+            .conflate()
+            .onCompletion { println("Completed") }
+            .collectIndexed { index, value ->
+                println("Collected $index: $value")
+            }
+
+    }
+
+    @Test
+    fun testRunTestingDelay() = runTest {
+        val measureTimeMillis = measureTimeMillis {
+
+            delay(5000)
+            println("Test done")
+        }
+        println("Time : ${measureTimeMillis}ms")
+        assertTrue(measureTimeMillis < 5000)
+
+    }
+
+    @Test
+    fun testCancellation() {
+        // We expect the original cause (IllegalStateException), not the side-effect (Cancellation)
+        assertThrows<IllegalStateException> {
+            runBlocking {
+                // Child 1: Will be cancelled when Child 2 fails
+                launch {
+                    repeat(100) {
+                        println("Test $it")
+                        delay(80)
+                    }
+                }
+
+                // Child 2: Fails and triggers scope-wide cancellation
+                launch {
+                    delay(200)
+                    throw IllegalStateException()
+                }
+            }
+        }
     }
 }
