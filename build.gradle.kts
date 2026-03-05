@@ -8,7 +8,18 @@ plugins {
 group = "dev.dead"
 version = "0.0.1-SNAPSHOT"
 description = "project-reactor-kt"
+tasks.withType<Test> {
+    testLogging {
+        // Show only the events you care about
+        events("passed", "skipped", "failed")
 
+        // This is the magic line to see your printlns
+        showStandardStreams = true
+
+        // Optional: Make it look even cleaner
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+}
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
