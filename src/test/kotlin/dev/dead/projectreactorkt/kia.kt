@@ -1,6 +1,8 @@
 package dev.dead.projectreactorkt
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.Executors
@@ -288,7 +290,7 @@ class Kia {
     }
 
     @Test
-    fun AnothertestStructuredConcurrencySum() = runBlocking {
+    fun AnothertestStructuredConcurrencySum() = runBlocking(Dispatchers.Default + CoroutineName("test_coroutine")) {
         // 1. Schedule Suspending 2 FIRST
         launch {
             logThreadInfo("Suspending 2: Hello this works")
@@ -319,5 +321,43 @@ class Kia {
     }
 
 
+    // flows
+    @Test
+    fun flows() = runBlocking(Dispatchers.Default + CoroutineName("test_coroutine")) {
+        logThreadInfo("Starting the flows")
+        val list = createListFlowy()
+        list.forEach { logThreadInfo("${it}") }
 
+    }
+
+    suspend fun createListFlowy(): List<Int> {
+        return buildList {
+            add(1)
+            delay(1.seconds)
+            add(2)
+            delay(1.seconds)
+            add(3)
+            delay(1.seconds)
+            add(4)
+
+        }
+    }
+
+    @Test
+    fun testFlowOutput() = runBlocking {
+        returnFlow().collect { value ->
+            logThreadInfo("Received: $value")
+        }
+    }
+
+    fun returnFlow(): Flow<Int> = flow {
+        emit(1)
+        delay(1.seconds)
+        emit(2)
+        delay(1.seconds)
+        emit(3)
+    }
 }
+
+
+// ->643p you create a class that can start and manage coroutines
