@@ -138,8 +138,25 @@ class Kia {
         jobs.joinAll()
         withContext(Dispatchers.IO)
         {
-            logThreadInfo("running in IO context ", "IO DIS")
+            repeat(3) {
+                launch {
+
+                    logThreadInfo("running in IO context ", "IO DIS")
+                }
+            }
         }
         logThreadInfo("The result (guaranteed 10000): $x")
     }
+
+    @Test
+    fun seeContextDemo(): Unit = runBlocking(Dispatchers.Default + CoroutineName("test_coroutine")) {
+        logThreadInfo("Starting the see context")
+        interospectCoroutine()
+        logThreadInfo("ending the see context")
+    }
+
+    suspend fun interospectCoroutine() {
+        logThreadInfo("Context : ${Thread.currentThread().name} -> ${currentCoroutineContext()}")
+    }
+
 }
