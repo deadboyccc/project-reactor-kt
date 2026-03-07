@@ -3,6 +3,8 @@ package dev.dead.projectreactorkt
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -157,6 +159,28 @@ class Kia {
 
     suspend fun interospectCoroutine() {
         logThreadInfo("Context : ${Thread.currentThread().name} -> ${currentCoroutineContext()}")
+    }
+
+    @Test
+    fun usingAtomicInt(): Unit = runBlocking {
+        logThreadInfo("Starting the usingAtomicInt")
+        val x = AtomicInteger(0)
+        val jobs = List(10_000) {
+            launch(Dispatchers.Default) {
+                x.getAndIncrement()
+            }
+        }
+        jobs.joinAll()
+        logThreadInfo("The result is ${x.get()}")
+    }
+
+    @Test
+    fun testList() {
+        val a = List(10) {
+            Random.nextInt(10)
+        }
+        println(a)
+
     }
     // Structured Concurrency
 
