@@ -136,6 +136,10 @@ class Kia {
             }
         }
         jobs.joinAll()
+        withContext(Dispatchers.IO)
+        {
+            logThreadInfo("running in IO context ", "IO DIS")
+        }
         logThreadInfo("The result (guaranteed 10000): $x")
     }
 }
