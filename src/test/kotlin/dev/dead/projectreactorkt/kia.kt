@@ -3,8 +3,10 @@ package dev.dead.projectreactorkt
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
+import kotlin.system.measureTimeMillis
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -182,6 +184,140 @@ class Kia {
         println(a)
 
     }
+
     // Structured Concurrency
+    @Test
+    fun `Executors with launch`() = runBlocking {
+        val t = measureTimeMillis {
+            // 1. Create the Executor
+            val executor = Executors.newVirtualThreadPerTaskExecutor()
+
+            // 2. Convert it to a CoroutineDispatcher
+            val dispatcher = executor.asCoroutineDispatcher()
+
+            val jobs = List(10_000) {
+                // 3. Explicitly use the virtual thread dispatcher
+                launch(dispatcher) {
+                    delay(1.seconds)
+                }
+            }
+
+            jobs.joinAll()
+
+            // 4. Best practice: close the executor/dispatcher to free resources
+            executor.close()
+        }
+        println("Total time: ${t}ms")
+    }
+
+    @Test
+    fun testStructuredConcurrencySum(): Unit = runBlocking() {
+
+        logThreadInfo("Computing a sum...")
+
+        // suspending 1
+        // suspending function that can suspect and waits for all children to finish before returning job complete
+        val sum = coroutineScope {
+            val a = async { generateValue() }
+            val b = async { generateValue() }
+
+            logThreadInfo("The result is A: ${a.await()} B: ${b.await()}")
+            // why is it not yielding the thread to the 2nd suspend ? and while it's waiting why it's not yielding to the second suspedning 2
+            yield()
+            launch() {
+                delay(3.seconds)
+            }
+            a.await() + b.await()
+        }
+
+        logThreadInfo("Sum is $sum")
+        // suspending 2
+        launch {
+            println("Hello this works")
+        }
+        println("helllllllllllllllllo")
+    }
+
+    suspend fun generateValue(): Int {
+        delay(500.milliseconds)
+        return Random.nextInt(10)
+    }
+
+    @Test
+    fun `demo scope`(): Unit = runBlocking {
+        logThreadInfo("Starting the demo scope")
+        // goes top to bot scheduling, then runs and suspects 3rd -> 2nd-> 1st
+        launch {
+
+            delay(500.milliseconds)
+            logThreadInfo("Ending the demo scope 1")
+            println("Hello1")
+        }
+        launch {
+            delay(100.milliseconds)
+            logThreadInfo("Ending the demo scope 2")
+            println("Hello2")
+        }
+        launch {
+            println("Hello3")
+            logThreadInfo("Ending the demo scope 3")
+        }
+
+    }
+
+    @Test
+    fun coscopes() {
+        runBlocking {
+
+            launch {
+                delay(1.seconds)
+                launch {
+                    delay(250.milliseconds)
+                    log("Grandchild done")
+                }
+                log("Child 1 done!")
+            }
+
+            launch {
+                delay(500.milliseconds)
+                log("Child 2 done!")
+            }
+
+            log("Parent done!")
+        }
+    }
+
+    @Test
+    fun AnothertestStructuredConcurrencySum() = runBlocking {
+        // 1. Schedule Suspending 2 FIRST
+        launch {
+            logThreadInfo("Suspending 2: Hello this works")
+        }
+        launch {
+            logThreadInfo("Suspending 3: Hello this works")
+
+        }
+        launch {
+            logThreadInfo("Suspending 4: Hello this works")
+        }
+
+        // 2. Now start the scope
+        val sum = coroutineScope {
+            // When this scope suspends at a.await(),
+            // the thread is now free to pick up "Suspending 2"
+            logThreadInfo("Summing thread")
+            val a = async { generateValue() }
+            val b = async { generateValue() }
+
+            a.await() + b.await()
+        }
+        println("Main")
+        logThreadInfo("runBlocking")
+
+
+        logThreadInfo("Sum is $sum")
+    }
+
+
 
 }
