@@ -5,6 +5,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.time.Duration
+import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
@@ -357,7 +359,140 @@ class Kia {
         delay(1.seconds)
         emit(3)
     }
+
+    @Test
+    fun testCoroutineScopeConstructor() {
+        ComponentWithScope().apply {
+            start()
+            Thread.sleep(Duration.ofSeconds(3))
+            stop()
+        }
+    }
+
+    class ComponentWithScope(dispatcher: CoroutineDispatcher = Dispatchers.Default) {
+        companion object {
+            val identifier = UUID.randomUUID().toString().slice(1..5)
+        }
+
+        private val scope = CoroutineScope(dispatcher + SupervisorJob())
+        fun start() {
+            log("Starting!")
+            scope.launch {
+                while (true) {
+                    delay(500.milliseconds)
+                    log("Component working!")
+                }
+            }
+            scope.launch {
+                log("Doing a one-off task...")
+                delay(500.milliseconds)
+                log("Task done!")
+            }
+        }
+
+        fun stop() {
+            log("Stopping!")
+            scope.cancel()
+        }
+
+    }
+
+    @Test
+    fun cancelDemo() {
+        runBlocking {
+            val launchedJob = launch {
+                log("I'm launched!")
+                delay(1000.milliseconds)
+                log("I'm done!")
+            }
+            val asyncDeferred = async {
+                log("I'm async")
+                delay(1000.milliseconds)
+                log("I'm done!")
+            }
+            delay(200.milliseconds)
+            launchedJob.cancel()
+            asyncDeferred.cancel()
+        }
+    }
+
+    @Test
+    fun timeoutApi(): Unit = runBlocking {
+        val num1 = withTimeoutOrNull(1.seconds) {
+            doSlowCalculation()
+        }
+        println(num1)
+        val num2 = withTimeoutOrNull(4.seconds) {
+            doSlowCalculation()
+        }
+        println(num2)
+    }
+
+    suspend fun doSlowCalculation(): Int {
+        delay(3.seconds)
+        return Random.nextInt(10)
+    }
+
+    @Test
+    fun cancelGrandChildren(): Unit = runBlocking(Dispatchers.Default) {
+        val job = launch {
+            logThreadInfo("Starting Grandfather")
+            launch {
+                delay(1.seconds)
+                logThreadInfo("Starting Father")
+                launch {
+                    delay(1.seconds)
+                    logThreadInfo("Starting Child")
+                }
+            }
+
+        }
+        delay(1.5.seconds)
+        job.cancel()
+
+    }
+
+    @Test
+    fun testCancelOnlyHappensAtSuspension(): Unit = runBlocking() {
+        val job = launch {
+
+            logThreadInfo("A")
+            delay(1.seconds)
+            logThreadInfo("B")
+            logThreadInfo("C")
+            //A or ABC never AB
+        }
+        delay(3.seconds)
+        job.cancel()
+
+
+    }
+
+    suspend fun doFailingWorkThrowError(): Unit {
+        logThreadInfo("Failing work started!")
+        delay(1.seconds)
+        throw UnsupportedOperationException("work failed")
+    }
+
+    @Test
+    fun testSwallowingErrors(): Unit = runBlocking() {
+        withTimeoutOrNull(2.seconds) {
+            while (true) {
+                try {
+                    doFailingWorkThrowError()
+                } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                    logThreadInfo("Failing work exception caught! ${e.message}")
+                }
+            }
+        }
+
+
+    }
+
+
 }
 
 
-// ->643p you create a class that can start and manage coroutines
+// ->660p 16.2.6
+// -> 16.2 Cold Flows *
