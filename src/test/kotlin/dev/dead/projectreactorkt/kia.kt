@@ -3,6 +3,7 @@ package dev.dead.projectreactorkt
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Duration
@@ -488,6 +489,25 @@ class Kia {
         }
 
 
+    }
+
+    suspend fun createInfiniteFlow(): Flow<Int> = flow {
+        var x = 0
+        while (true) {
+            emit(++x)
+            delay(1.seconds)
+        }
+    }
+
+    @Test
+    fun collectingInfiniteColdStream(): Unit {
+        runBlocking(Dispatchers.Default) {
+            createInfiniteFlow()
+                .takeWhile { it < 11 }
+                .collect { value ->
+                    logThreadInfo("Collecting $value")
+                }
+        }
     }
 
 
