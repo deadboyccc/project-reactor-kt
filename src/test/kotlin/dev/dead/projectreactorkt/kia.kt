@@ -430,7 +430,7 @@ class Kia {
     }
 
     suspend fun doSlowCalculation(): Int {
-        delay(3.seconds)
+        delay(1.seconds)
         return Random.nextInt(10)
     }
 
@@ -510,9 +510,73 @@ class Kia {
         }
     }
 
+    @Test
+    fun `test if job cancelled`(): Unit = runBlocking(Dispatchers.Default) {
+        val job = launch {
+            repeat(5) {
+                while (isActive) {
+                    logThreadInfo(doSlowCalculation(), "Launch")
+                }
+            }
 
+
+        }
+        delay(3.seconds)
+        job.cancel()
+    }
+
+    @Test
+    fun `test no yield`(): Unit = runBlocking() {
+        launch {
+            repeat(5)
+            {
+                logThreadInfo(doCpuHeavyWork())
+            }
+        }
+        launch {
+            repeat(2) {
+                logThreadInfo(doSlowCalculation())
+            }
+        }
+
+    }
+
+    suspend fun doCpuHeavyWork(): Int {
+        var counter = 0
+        val startTime = System.currentTimeMillis()
+        while (System.currentTimeMillis() < startTime + 500) {
+            counter++
+            yield()
+        }
+
+        return counter
+
+    }
+
+    @Test
+    fun `resource leak`(): Unit = runBlocking() {
+        val job = launch {
+            TestDemoClosable().use {
+                it.println()
+            }
+
+
+        }
+        delay(200.milliseconds)
+        job.cancel()
+    }
+
+
+    class TestDemoClosable : AutoCloseable {
+        override fun close() {
+            println("Closed")
+        }
+
+        fun println() {
+            println("in Demo of Closable")
+        }
+    }
 }
-
 
 // ->660p 16.2.6
 // -> channel flows
