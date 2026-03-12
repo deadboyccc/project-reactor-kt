@@ -1,16 +1,16 @@
 package dev.dead.projectreactorkt
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.junit.jupiter.api.Assertions.assertTrue
 import java.time.Duration
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
+import kotlin.random.nextInt
 import kotlin.system.measureTimeMillis
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
@@ -244,7 +244,7 @@ class Kia {
     }
 
     suspend fun generateValue(): Int {
-        delay(500.milliseconds)
+        delay(3.seconds)
         return Random.nextInt(10)
     }
 
@@ -576,7 +576,90 @@ class Kia {
             println("in Demo of Closable")
         }
     }
-}
 
-// ->660p 16.2.6
-// -> channel flows
+    // -> channel flows
+    suspend fun createChannelFlow() = channelFlow {
+        repeat(5)
+        {
+            launch { send(generateValue()) }
+        }
+    }
+
+    @Test
+    fun testingChannelFlow(): Unit = runBlocking(Dispatchers.Default) {
+        val time = measureTimeMillis {
+            createChannelFlow().collect { value -> logThreadInfo("Collected $value") }
+        }
+        assertTrue(time < 4_000)
+        logThreadInfo("Collected in $time ms")
+
+
+    }
+
+    @Test
+    fun `sharedFlows testing`(): Unit = runBlocking(Dispatchers.Default) {
+        // queue a task
+        launch {
+            cancel()
+        }
+        // use the same thread to broadcast, but it has delay so it should yield the thread
+        val radioStation = RadioStation()
+        radioStation.beginBroadcasting(this)
+
+        // delay the thread
+        delay(600.milliseconds)
+
+        // collect the share flow with the thread( has no suspension unless explicit )
+        radioStation.messageFlow.collect { value ->
+            yield() // Manually yield the thread to the canceled task
+            ensureActive()
+            logThreadInfo("Collected $value")
+        }
+
+
+    }
+
+    @Test
+    fun `sharedFlows cancel testing`(): Unit = runBlocking(Dispatchers.Default) {
+        // 1. Launch the cancellation task
+        val cancelJob = launch {
+            logThreadInfo("Cancellation task triggered")
+            this@runBlocking.cancel()
+        }
+
+        val radioStation = RadioStation()
+        radioStation.beginBroadcasting(this)
+
+
+        try {
+            radioStation.messageFlow.collect { value ->
+                logThreadInfo("Collected $value")
+                yield()
+            }
+        } catch (e: CancellationException) {
+            logThreadInfo("Flow collection cancelled successfully")
+        }
+
+        // 2. FORCE the dispatcher to run the cancelJob before starting collection
+        delay(3000.milliseconds)
+        cancelJob.join()
+    }
+
+    class RadioStation {
+        private val _messageFlow = MutableSharedFlow<Int>()
+        val messageFlow = _messageFlow.asSharedFlow()
+
+        fun beginBroadcasting(scope: CoroutineScope) {
+            scope.launch {
+                while (true) {
+                    delay(500.milliseconds)
+                    val number = Random.nextInt(0..10)
+                    log("Emitting $number!")
+                    _messageFlow.emit(number)
+                    ensureActive()
+                    yield()
+                }
+            }
+        }
+    }
+}
