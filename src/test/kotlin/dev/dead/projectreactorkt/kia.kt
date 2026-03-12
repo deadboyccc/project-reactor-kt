@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.junit.jupiter.api.Assertions.assertTrue
+import java.io.File
 import java.time.Duration
 import java.util.*
 import java.util.concurrent.Executors
@@ -645,21 +646,45 @@ class Kia {
         cancelJob.join()
     }
 
-    class RadioStation {
-        private val _messageFlow = MutableSharedFlow<Int>()
-        val messageFlow = _messageFlow.asSharedFlow()
+    @Test
+    fun `review of scope functions`() {
+        val user = User(null, null, null)
+        user.email = "fa"
+        user.email?.let {
+            println(it)
+        }
+        user.apply {
+            age = 12
+        }
+        // use with res
+        println(File(".").absolutePath)
+        File("./hello.txt").bufferedReader().use {
+            it.forEachLine { println(it) }
+        }
+    }
 
-        fun beginBroadcasting(scope: CoroutineScope) {
-            scope.launch {
-                while (true) {
-                    delay(500.milliseconds)
-                    val number = Random.nextInt(0..10)
-                    log("Emitting $number!")
-                    _messageFlow.emit(number)
-                    ensureActive()
-                    yield()
-                }
+
+}
+
+class User(var name: String?, var age: Int?, var email: String?) {
+
+}
+
+class RadioStation {
+    private val _messageFlow = MutableSharedFlow<Int>()
+    val messageFlow = _messageFlow.asSharedFlow()
+
+    fun beginBroadcasting(scope: CoroutineScope) {
+        scope.launch {
+            while (true) {
+                delay(500.milliseconds)
+                val number = Random.nextInt(0..10)
+                log("Emitting $number!")
+                _messageFlow.emit(number)
+                ensureActive()
+                yield()
             }
         }
     }
 }
+
