@@ -685,6 +685,51 @@ class RadioStation {
                 yield()
             }
         }
+
     }
+
+    @Test
+    fun testConvertingColdToshared() = runBlocking(Dispatchers.Default) {
+        val sharedFlow = queryTemperature().shareIn(this, SharingStarted.Lazily)
+
+        repeat(3) {
+            launch {
+                sharedFlow.collect {
+                    logThreadInfo("Collected $it")
+                }
+            }
+        }
+    }
+
+}
+
+
+fun returnRandomTemp(): Int = Random.nextInt(0..10)
+fun queryTemperature(): Flow<Int> = flow {
+    repeat(5) {
+        returnRandomTemp().also {
+            log("Emitting $it")
+            emit(it)
+        }
+
+    }
+    @Test
+    fun `test transform on flows`(): Unit = runBlocking(Dispatchers.Default) {
+        val a = flow<String> {
+            emit("John")
+            emit("Doe")
+            emit("Jane")
+            emit("Mary")
+        }
+        a.transform { value ->
+            emit(value)
+            emit(value.uppercase())
+            emit(value.repeat(2))
+        }.collect { value ->
+            logThreadInfo("Collected $value")
+        }
+    }
+
+
 }
 
