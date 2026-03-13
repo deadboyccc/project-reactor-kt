@@ -1,6 +1,7 @@
 package dev.dead.projectreactorkt
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -664,28 +665,27 @@ class Kia {
     }
 
 
-}
+    class User(var name: String?, var age: Int?, var email: String?) {
 
-class User(var name: String?, var age: Int?, var email: String?) {
+    }
 
-}
+    class RadioStation {
+        private val _messageFlow = MutableSharedFlow<Int>()
+        val messageFlow = _messageFlow.asSharedFlow()
 
-class RadioStation {
-    private val _messageFlow = MutableSharedFlow<Int>()
-    val messageFlow = _messageFlow.asSharedFlow()
-
-    fun beginBroadcasting(scope: CoroutineScope) {
-        scope.launch {
-            while (true) {
-                delay(500.milliseconds)
-                val number = Random.nextInt(0..10)
-                log("Emitting $number!")
-                _messageFlow.emit(number)
-                ensureActive()
-                yield()
+        fun beginBroadcasting(scope: CoroutineScope) {
+            scope.launch {
+                while (true) {
+                    delay(500.milliseconds)
+                    val number = Random.nextInt(0..10)
+                    log("Emitting $number!")
+                    _messageFlow.emit(number)
+                    ensureActive()
+                    yield()
+                }
             }
-        }
 
+        }
     }
 
     @Test
@@ -728,6 +728,107 @@ class RadioStation {
         }.collect { value ->
             logThreadInfo("Collected $value")
         }
+    }
+
+    @Test
+    fun `test conflate and buffer of flows`(): Unit = runBlocking(Dispatchers.Default) {
+        val counter = AtomicInteger(0)
+
+        // 1. Create a list of 10 flows
+        val flows = List(50) {
+            queryTemperature()
+        }
+
+        // 2. Merge them into one single flow and collect
+        flows.merge().conflate().buffer(5).collect { temp ->
+            counter.incrementAndGet()
+//            logThreadInfo("Collected: $temp")
+        }
+
+        println("Total items collected: ${counter.get()}")
+    }
+
+    @Test
+    fun `test conflate in action`(): Unit = runBlocking() {
+        val counter = AtomicInteger(0)
+        val flows = List(50) { queryTemperature() }
+
+        flows.merge().conflate().buffer(5, onBufferOverflow = BufferOverflow.SUSPEND).collect { temp ->
+                counter.incrementAndGet()
+                // Artificial delay to make the collector "busy"
+                delay(50.milliseconds)
+                logThreadInfo("Collected: $temp")
+            }
+
+        println("Total items collected: ${counter.get()}") // This will be MUCH less than 250
+    }
+
+    @Test
+    fun `creating a custom intermediate operator`(): Unit = runBlocking() {
+        val doubleFlow = flowOf(1.0, 2.0, 30.0, 121.0)
+        doubleFlow.averageOfLast(3).collect {
+                logThreadInfo("Collected $it")
+            }
+    }
+
+    fun Flow<Double>.averageOfLast(n: Int): Flow<Double> = flow {
+        val numbers = mutableListOf<Double>()
+        collect {
+            if (numbers.size >= n) {
+                numbers.removeFirst()
+            }
+            numbers.add(it)
+            emit(numbers.average())
+        }
+    }
+
+    class Human(val username: String, val age: Int, val isStudent: Boolean, val eyeColor: Color) {}
+    enum class Color(val red: Double, val green: Double, val blue: Double) {
+        RED(red = 0.5, green = 0.5, blue = 1.0), GREEN(red = 0.5, green = 0.5, blue = 1.0), BLUE(
+            red = 0.5,
+            green = 0.5,
+            blue = 1.0
+        ),
+        YELLOW(red = 0.5, green = 0.5, blue = 1.0), HAZEL(red = 0.5, green = 0.5, blue = 1.0);
+
+        val rgb = (red * 256 + green) * 256 + blue
+        fun printColorDistribution() {
+            // rgb
+            println("$red, $green, $blue")
+            println(rgb)
+        }
+
+    }
+
+    fun getRarity(color: Color) = when (color) {
+        Color.RED -> 4
+        Color.GREEN -> 2
+        Color.BLUE -> 3
+        Color.YELLOW -> 1
+        Color.HAZEL -> 8
+
+    }
+
+    @Test
+    fun testEnum() {
+        // 1. Get the enum values (using the modern 'entries' property)
+        val values = Color.entries.toTypedArray()
+
+        // 2. Generate a random list of 10 Color instances
+        val demo = List(10) { values.random() }
+
+        // 3. Map the colors to their rarity values
+        // Using a lambda is the most readable way for top-level functions
+        val list = demo.map { color -> getRarity(color) }
+
+        // Alternative: Using a function reference if getRarity is in the same file
+        // val list = demo.map(::getRarity)
+
+        println("Random Colors: $demo")
+        println("Rarity Mapping: $list")
+
+        // Quick verification
+        assert(list.size == 10)
     }
 
 
