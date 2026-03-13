@@ -820,6 +820,7 @@ class Kia {
         // 3. Map the colors to their rarity values
         // Using a lambda is the most readable way for top-level functions
         val list = demo.map { color -> getRarity(color) }
+        val list2 = demo.map(::getRarity)
 
         // Alternative: Using a function reference if getRarity is in the same file
         // val list = demo.map(::getRarity)
