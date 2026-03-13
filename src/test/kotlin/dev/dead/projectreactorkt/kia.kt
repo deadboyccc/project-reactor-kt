@@ -701,18 +701,18 @@ class RadioStation {
         }
     }
 
-}
 
+    fun returnRandomTemp(): Int = Random.nextInt(0..10)
+    fun queryTemperature(): Flow<Int> = flow {
+        repeat(5) {
+            returnRandomTemp().also {
+                log("Emitting $it")
+                emit(it)
+            }
 
-fun returnRandomTemp(): Int = Random.nextInt(0..10)
-fun queryTemperature(): Flow<Int> = flow {
-    repeat(5) {
-        returnRandomTemp().also {
-            log("Emitting $it")
-            emit(it)
         }
-
     }
+
     @Test
     fun `test transform on flows`(): Unit = runBlocking(Dispatchers.Default) {
         val a = flow<String> {
@@ -732,4 +732,3 @@ fun queryTemperature(): Flow<Int> = flow {
 
 
 }
-
