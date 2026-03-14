@@ -211,7 +211,7 @@ class kiaOne {
 
     @Test
     fun oneToNDummyAlgoReadAssertCleaned() = runBlocking(Dispatchers.IO) {
-        val path = Path.of("./test.txt")
+        val path = Path.of("./test1.txt")
 
         // 1. Generate the expected sequence as a sequence/stream of characters
         val expectedSequence = (1..151).asSequence()
@@ -232,7 +232,7 @@ class kiaOne {
         val path = Path.of("./test.txt")
 
         val expected = (1..151).joinToString(separator = "")
-        val actual = withContext(Dispatchers.IO) { path.readText().trim() }
+        val actual = path.readText().trim()
 
         (actual == expected).also { success ->
             println("Match Status: ${if (success) "✅ Correct" else "❌ Mismatch"}")
