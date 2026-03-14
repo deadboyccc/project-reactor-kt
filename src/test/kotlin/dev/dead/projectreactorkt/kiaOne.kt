@@ -130,7 +130,7 @@ class kiaOne {
         // 1. Efficient Writing (using Use for auto-closing)
         withContext(Dispatchers.IO) {
             path.bufferedWriter().use { writer ->
-                (1..150).forEach { n ->
+                (1..151).forEach { n ->
                     writer.write("$n")
                 }
             }
