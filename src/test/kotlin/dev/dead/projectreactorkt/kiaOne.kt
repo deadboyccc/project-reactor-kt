@@ -40,6 +40,23 @@ class kiaOne {
         println(evalWithLogging(Sum(Sum(Num(1), Num(2)), Num(4))))
     }
 
+    @Test
+    fun nestedWithLabels() {
+        outer@ for (i in 1..10) {
+            // 1 -> 10
+            inner@ while (i < 5) {
+                println("inner loop $i")
+                if (i == 4) {
+                    println("breaking loop $i")
+                    break@inner
+                } else {
+                    continue@outer
+                }
+
+            }
+        }
+    }
+
     fun evalWithLogging(e: Expr): Int =
         when (e) {
             is Num -> {
@@ -55,4 +72,15 @@ class kiaOne {
             }
 
         }
+
+    @Test
+    fun FizzBuzzWhenNoArguments() {
+        (1..100).forEach {
+            when {
+                it % 15 == 0 -> println("FizzBuzz : $it")
+                it % 3 == 0 -> println("Fizz  : $it")
+                it % 5 == 0 -> println("Buzz : $it")
+            }
+        }
+    }
 }
