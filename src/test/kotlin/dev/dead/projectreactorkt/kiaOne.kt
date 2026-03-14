@@ -6,6 +6,7 @@ import kotlinx.coroutines.withContext
 import java.nio.file.Path
 import kotlin.io.path.*
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class kiaOne {
@@ -239,4 +240,96 @@ class kiaOne {
         }
     }
 
+
+    @Test
+    fun graphTraversingCommonPastCoWorkers() {
+        // 1. Initialize the Graph (Adjacency List)
+        // A Map where the Key is a Worker, and the Value is a Set of their past co-workers.
+        val graph = mutableMapOf<String, MutableSet<String>>()
+
+        // Helper function to add a bi-directional edge (since co-working goes both ways)
+        fun addCoWorker(w1: String, w2: String) {
+            graph.computeIfAbsent(w1) { mutableSetOf() }.add(w2)
+            graph.computeIfAbsent(w2) { mutableSetOf() }.add(w1)
+        }
+
+        // --- 2. Build the Data ---
+        // We'll create a moderately sized dataset with a mix of successful groups and noise.
+
+        // Group A: Alice, Bob, Charlie (All worked together)
+        addCoWorker("Alice", "Bob")
+        addCoWorker("Bob", "Charlie")
+        addCoWorker("Charlie", "Alice")
+
+        // Group B: Charlie, Dave, Eve (All worked together)
+        addCoWorker("Charlie", "Dave")
+        addCoWorker("Dave", "Eve")
+        addCoWorker("Eve", "Charlie")
+
+        // Overlapping Group C: Bob, Charlie, Dave
+        // Bob and Charlie already worked together, Charlie and Dave already worked together.
+        // We just add a link between Bob and Dave to complete a new 3-person group.
+        addCoWorker("Bob", "Dave")
+
+        // Noise (These workers don't form a complete 3-person group with anyone)
+        addCoWorker("Alice", "Frank")
+        addCoWorker("Frank", "Grace")
+        addCoWorker("Grace", "Eve")
+
+        println("=== Initial Graph: Past Co-worker Relationships ===")
+        graph.forEach { (worker, coWorkers) ->
+            println("$worker has worked with: $coWorkers")
+        }
+        println("\n=== Starting Algorithm: Search for Optimal Groups of 3 ===")
+
+        // --- 3. The Algorithm ---
+        val idealGroups = mutableListOf<Set<String>>()
+
+        // Convert to list so we can iterate by index. This prevents finding duplicates.
+        val workersList = graph.keys.toList()
+
+        // Loop through pairs of workers.
+        // Using indices (i < j) ensures we check [Alice, Bob] but ignore [Bob, Alice]
+        for (i in 0 until workersList.size) {
+            val worker1 = workersList[i]
+
+            for (j in i + 1 until workersList.size) {
+                val worker2 = workersList[j]
+
+                // Step A: Check if worker1 and worker2 have actually worked together
+                if (graph[worker1]?.contains(worker2) == true) {
+                    println("Evaluating connected pair: [$worker1, $worker2]")
+
+                    // Step B: Find common past co-workers between them.
+                    // This is the efficiency trick: Intersecting their sets is very fast.
+                    val commonCoWorkers = graph[worker1]!!.intersect(graph[worker2]!!)
+
+                    // Step C: Any common co-worker forms a perfect group of 3!
+                    for (worker3 in commonCoWorkers) {
+
+                        // To prevent duplicate groups (e.g., logging {Alice, Bob, Charlie}
+                        // and later {Bob, Charlie, Alice}), we ensure worker3's index
+                        // comes AFTER worker2 in our master list.
+                        if (workersList.indexOf(worker3) > j) {
+                            val group = setOf(worker1, worker2, worker3)
+                            idealGroups.add(group)
+                            println("  -> Success! Found 3rd member '$worker3'. Formed group: $group")
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- 4. Results Output and Validation ---
+        println("\n=== Final Results ===")
+        println("Total optimal groups found: ${idealGroups.size}")
+        idealGroups.forEachIndexed { index, group ->
+            println("Group ${index + 1}: $group")
+        }
+
+        // We explicitly built the data to have exactly 3 complete triangles.
+        assertEquals(3, idealGroups.size, "The algorithm should have found exactly 3 groups.")
+    }
 }
+
+
