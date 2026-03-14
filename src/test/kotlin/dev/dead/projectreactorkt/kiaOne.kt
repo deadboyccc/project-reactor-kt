@@ -125,7 +125,7 @@ class kiaOne {
 
     @Test
     fun oneToNDummyAlgo() = runBlocking {
-        val path = Path.of("./test.txt")
+        val path = Path.of("./test1.txt")
 
         // 1. Efficient Writing (using Use for auto-closing)
         withContext(Dispatchers.IO) {
@@ -329,6 +329,30 @@ class kiaOne {
 
         // We explicitly built the data to have exactly 3 complete triangles.
         assertEquals(3, idealGroups.size, "The algorithm should have found exactly 3 groups.")
+    }
+
+    @Test
+    fun `verify file content matches sequence with diff`() = runBlocking(Dispatchers.IO) {
+        val file = Path.of("./test1.txt")
+        val expectedChars = (1..151).joinToString("").asSequence()
+
+        val result = file.bufferedReader().use { reader ->
+            var mismatch: String? = null
+
+            expectedChars.forEachIndexed { i, expected ->
+                val actualInt = reader.read()
+                val actual = if (actualInt == -1) "EOF" else actualInt.toChar().toString()
+
+                if (actual != expected.toString()) {
+                    mismatch = "Mismatch at index $i: expected '$expected' but got '$actual'"
+                    return@use mismatch
+                }
+            }
+
+            if (reader.read() != -1) "File has trailing data" else null
+        }
+
+        if (result == null) println("Success") else println("Failure: $result")
     }
 }
 
