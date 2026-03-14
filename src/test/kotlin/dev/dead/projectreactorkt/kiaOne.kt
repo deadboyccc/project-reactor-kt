@@ -210,7 +210,7 @@ class kiaOne {
     }
 
     @Test
-    fun oneToNDummyAlgoReadAssertCleaned() = runBlocking(Dispatchers.IO) {
+    fun oneToNDummyAlgoReadAssertCleanedAndOptimizedJustInTimeComparison() = runBlocking(Dispatchers.IO) {
         val path = Path.of("./test1.txt")
 
         // 1. Generate the expected sequence as a sequence/stream of characters
