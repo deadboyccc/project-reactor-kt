@@ -1,5 +1,12 @@
 package dev.dead.projectreactorkt
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import java.nio.file.Path
+import kotlin.io.path.bufferedWriter
+import kotlin.io.path.exists
+import kotlin.io.path.useLines
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -82,5 +89,69 @@ class kiaOne {
                 it % 5 == 0 -> println("Buzz : $it")
             }
         }
+    }
+
+    @Test
+    fun rangesDemo() {
+        for (i in 100 downTo 1 step 5) {
+            print("$i ")
+        }
+    }
+
+    @Test
+    fun binaryMaps() {
+        val binaryReps = mutableMapOf<Char, String>()
+        for (char in 'A'..'Z') {
+
+            val binary = char.code.toString(radix = 2)
+            println(char.code.toString(radix = 16))
+            binaryReps[char] = binary
+        }
+        for ((letter, binary) in binaryReps) {
+
+            println("$letter = $binary")
+        }
+        // A = 1000001 D = 1000100
+        // B = 1000010 E = 1000101
+        // C = 1000011 F = 1000110
+        // (output split into columns for conciseness)
+    }
+
+    @Test
+    fun testConverter() {
+        println(radixDecToHex(Short.MAX_VALUE.toInt()))
+    }
+
+    fun radixDecToHex(dec: Int): String =
+        Integer.toHexString(dec)
+
+
+    @Test
+    fun oneToNDummyAlgo() = runBlocking {
+        val path = Path.of("./test.txt")
+
+        // 1. Efficient Writing (using Use for auto-closing)
+        withContext(Dispatchers.IO) {
+            path.bufferedWriter().use { writer ->
+                (1..100).forEach { n ->
+                    writer.write("Line $n\n")
+                }
+            }
+        }
+
+        // 2. Modern Idiomatic Reading (using Extension Functions)
+        val content = withContext(Dispatchers.IO) {
+            if (path.exists()) {
+                // readLines() is great for small/medium files
+                // useLines() is better for massive files (streaming)
+                path.useLines { lines ->
+                    lines.joinToString(separator = ", ")
+                }
+            } else {
+                "File not found"
+            }
+        }
+
+        println(content)
     }
 }
