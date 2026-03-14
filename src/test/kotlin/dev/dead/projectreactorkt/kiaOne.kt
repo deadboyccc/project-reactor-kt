@@ -4,9 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.nio.file.Path
-import kotlin.io.path.bufferedWriter
-import kotlin.io.path.exists
-import kotlin.io.path.useLines
+import kotlin.io.path.*
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -64,21 +62,20 @@ class kiaOne {
         }
     }
 
-    fun evalWithLogging(e: Expr): Int =
-        when (e) {
-            is Num -> {
-                println("num: ${e.value}")
-                e.value
-            }
-
-            is Sum -> {
-                val left = evalWithLogging(e.left)
-                val right = evalWithLogging(e.right)
-                println("sum: $left + $right")
-                left + right
-            }
-
+    fun evalWithLogging(e: Expr): Int = when (e) {
+        is Num -> {
+            println("num: ${e.value}")
+            e.value
         }
+
+        is Sum -> {
+            val left = evalWithLogging(e.left)
+            val right = evalWithLogging(e.right)
+            println("sum: $left + $right")
+            left + right
+        }
+
+    }
 
     @Test
     fun FizzBuzzWhenNoArguments() {
@@ -122,8 +119,7 @@ class kiaOne {
         println(radixDecToHex(Short.MAX_VALUE.toInt()))
     }
 
-    fun radixDecToHex(dec: Int): String =
-        Integer.toHexString(dec)
+    fun radixDecToHex(dec: Int): String = Integer.toHexString(dec)
 
 
     @Test
@@ -134,7 +130,7 @@ class kiaOne {
         withContext(Dispatchers.IO) {
             path.bufferedWriter().use { writer ->
                 (1..100).forEach { n ->
-                    writer.write("Line $n\n")
+                    writer.write("$n")
                 }
             }
         }
@@ -154,4 +150,93 @@ class kiaOne {
 
         println(content)
     }
+
+    @Test
+    fun oneToNDummyAlgoReadOnly() = runBlocking {
+        val path = Path.of("./test.txt")
+
+        // 1. Efficient Writing (using Use for auto-closing)
+//        withContext(Dispatchers.IO) {
+//            path.bufferedWriter().use { writer ->
+//                (1..100).forEach { n ->
+//                    writer.write("$n")
+//                }
+//            }
+//        }
+
+        // 2. Modern Idiomatic Reading (using Extension Functions)
+        val content = withContext(Dispatchers.IO) {
+            if (path.exists()) {
+                // on path use >
+                // readLines() is great for small/medium files
+                // useLines() is better for massive files (streaming)
+                val result = path.readText().trim() // .trim() handles trailing newlines from writes
+
+                val expected = (1..151).joinToString(separator = "")
+
+                val isSame = result == expected
+
+                // Or use compareTo if you specifically need the integer delta
+                val comparisonInt = result.compareTo(expected)
+
+                println("File Content: $result")
+                println("Expected:     $expected")
+                println("Are they equal? $isSame")
+                println("Comparison Int: $comparisonInt")
+
+
+            } else {
+                "File not found"
+            }
+        }
+
+        println(content)
+    }
+
+    @Test
+    fun oneToNDummyAlgoReadAssert() = runBlocking {
+
+        val path = Path.of("./test.txt")
+        val result = path.readText().trim()
+        val expected = (1..151).joinToString("")
+
+
+        // This will give you a "Click to show difference" link in IntelliJ
+//        assertEquals(expected, result, "The file content should match the sequence 1..151")
+        val isCorrect = (1..151).asSequence()
+            .map { it.toString() }
+            .joinToString("") == result
+        println("isCorrect: $isCorrect")
+    }
+
+    @Test
+    fun oneToNDummyAlgoReadAssertCleaned() = runBlocking(Dispatchers.IO) {
+        val path = Path.of("./test.txt")
+
+        // 1. Generate the expected sequence as a sequence/stream of characters
+        val expectedSequence = (1..151).asSequence()
+            .flatMap { it.toString().asSequence() }
+
+        // 2. Stream the file content and compare lazily
+        val isCorrect = path.bufferedReader().use { reader ->
+            expectedSequence.all { expectedChar ->
+                reader.read().toChar() == expectedChar
+            } && reader.read() == -1 // Ensure no extra trailing data
+        }
+
+        println("isCorrect: $isCorrect")
+    }
+
+    @Test
+    fun oneToNDummyAlgoReadAssertFP(): Unit = runBlocking {
+        val path = Path.of("./test.txt")
+
+        val expected = (1..151).joinToString(separator = "")
+        val actual = withContext(Dispatchers.IO) { path.readText().trim() }
+
+        (actual == expected).also { success ->
+            println("Match Status: ${if (success) "✅ Correct" else "❌ Mismatch"}")
+        }
+    }
+
 }
