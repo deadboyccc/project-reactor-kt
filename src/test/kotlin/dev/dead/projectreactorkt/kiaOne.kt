@@ -447,12 +447,11 @@ class kiaOne {
 
     @Test
     fun compareParallelPerformance() {
-        val range = 1..1_000_000
+        val range = 20_000_000
 
         // Measure Sequential
         val seqTime = measureTimeMillis {
-            range.asSequence()
-                .sum()
+            IntStream.range(1, range).sum()
         }
 
         // Measure Parallel
