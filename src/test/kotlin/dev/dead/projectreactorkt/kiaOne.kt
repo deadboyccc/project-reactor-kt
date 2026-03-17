@@ -4,7 +4,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.nio.file.Path
+import java.util.stream.Collectors
+import java.util.stream.IntStream
 import kotlin.io.path.*
+import kotlin.system.measureTimeMillis
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -378,6 +381,89 @@ class kiaOne {
             println(joinToString(" | ", "(", ")"))
         }
 
+    }
+
+
+    @Test
+    fun testStreamsExtensions() {
+        // 1. Generate, parallelize, and transform
+        val list = IntStream.range(1, 1_000_000)
+            .parallel()
+            .mapToObj { it to it.toString(16) } // mapToObj creates the Pair<Int, String>
+            .toList() // Kotlin extension to collect the stream efficiently
+
+        // 2. Verify a couple of values
+        assertEquals(999_999, list.size)
+        assertEquals(255 to "ff", list[254])
+
+        println("Processed ${list.size} elements. Example: ${list.last()}")
+    }
+
+    @Test
+    fun testStreamToMap() {
+        val maxRange = 1_000_000
+
+        // 1. Generate and map to a Map structure
+        val hexMap: Map<Int, String> = IntStream.range(1, maxRange)
+            .parallel()
+            .mapToObj { it to it.toString(16) }
+            // We use the Java Collector; 'it.first' is the key, 'it.second' is the value
+            .collect(
+                Collectors.toMap(
+                    { it.first },
+                    { it.second }
+                ))
+
+        // 2. Assertions
+        assertEquals(maxRange - 1, hexMap.size)
+        assertEquals("ff", hexMap[255])
+        assertEquals("1e240", hexMap[123456])
+
+        assertTrue(hexMap.containsKey(999_999))
+    }
+
+    @Test
+    fun testStreamsExtensionsCleaned() {
+        val list = IntStream.range(1, 1_000_000)
+            .parallel()
+            .mapToObj { it to it.toString(16) }
+            .toList()
+
+        assertEquals(999_999, list.size)
+        assertEquals(255 to "ff", list[254])
+    }
+
+    @Test
+    fun testStreamToMapCleaned() {
+        val hexMap = IntStream.range(1, 1_000_000)
+            .parallel()
+            .mapToObj { it to it.toString(16) }
+            .toList()
+            .toMap()
+
+        assertEquals(999_999, hexMap.size)
+        assertEquals("ff", hexMap[255])
+    }
+
+    @Test
+    fun compareParallelPerformance() {
+        val range = 1..1_000_000
+
+        // Measure Sequential
+        val seqTime = measureTimeMillis {
+            range.asSequence()
+                .sum()
+        }
+
+        // Measure Parallel
+        val parTime = measureTimeMillis {
+            IntStream.range(1, 1_000_000)
+                .parallel()
+                .sum()
+        }
+
+        println("Sequential: ${seqTime}ms | Parallel: ${parTime}ms")
+        assertTrue(parTime < seqTime, "Parallel should be faster for large CPU-bound tasks")
     }
 }
 
