@@ -567,3 +567,21 @@ class Solution4 {
     }
 }
 
+class NestedIterator(nestedList: List<NestedInteger>) {
+
+    fun next(): Int {
+        return 1
+
+    }
+
+    fun hasNext(): Boolean {
+        return false;
+
+    }
+}
+
+interface NestedInteger {
+    fun isInteger(): Boolean
+    fun getInteger(): Int?
+    fun getList(): List<NestedInteger>?
+}
