@@ -207,9 +207,7 @@ class kiaOne {
 
         // This will give you a "Click to show difference" link in IntelliJ
 //        assertEquals(expected, result, "The file content should match the sequence 1..151")
-        val isCorrect = (1..151).asSequence()
-            .map { it.toString() }
-            .joinToString("") == result
+        val isCorrect = (1..151).asSequence().map { it.toString() }.joinToString("") == result
         println("isCorrect: $isCorrect")
     }
 
@@ -218,8 +216,7 @@ class kiaOne {
         val path = Path.of("./test1.txt")
 
         // 1. Generate the expected sequence as a sequence/stream of characters
-        val expectedSequence = (1..151).asSequence()
-            .flatMap { it.toString().asSequence() }
+        val expectedSequence = (1..151).asSequence().flatMap { it.toString().asSequence() }
 
         // 2. Stream the file content and compare lazily
         val isCorrect = path.bufferedReader().use { reader ->
@@ -389,8 +386,7 @@ class kiaOne {
     @Test
     fun testStreamsExtensions() {
         // 1. Generate, parallelize, and transform
-        val list = IntStream.range(1, 1_000_000)
-            .parallel()
+        val list = IntStream.range(1, 1_000_000).parallel()
             .mapToObj { it to it.toString(16) } // mapToObj creates the Pair<Int, String>
             .toList() // Kotlin extension to collect the stream efficiently
 
@@ -407,15 +403,9 @@ class kiaOne {
         val maxRange = 1_000_000
 
         // 1. Generate and map to a Map structure
-        val hexMap: Map<Int, String> = IntStream.range(1, maxRange)
-            .parallel()
-            .mapToObj { it to it.toString(16) }
+        val hexMap: Map<Int, String> = IntStream.range(1, maxRange).parallel().mapToObj { it to it.toString(16) }
             // We use the Java Collector; 'it.first' is the key, 'it.second' is the value
-            .collect(
-                Collectors.toMap(
-                    { it.first },
-                    { it.second }
-                ))
+            .collect(Collectors.toMap({ it.first }, { it.second }))
 
         // 2. Assertions
         assertEquals(maxRange - 1, hexMap.size)
@@ -427,10 +417,7 @@ class kiaOne {
 
     @Test
     fun testStreamsExtensionsCleaned() {
-        val list = IntStream.range(1, 1_000_000)
-            .parallel()
-            .mapToObj { it to it.toString(16) }
-            .toList()
+        val list = IntStream.range(1, 1_000_000).parallel().mapToObj { it to it.toString(16) }.toList()
 
         assertEquals(999_999, list.size)
         assertEquals(255 to "ff", list[254])
@@ -438,11 +425,7 @@ class kiaOne {
 
     @Test
     fun testStreamToMapCleaned() {
-        val hexMap = IntStream.range(1, 1_000_000)
-            .parallel()
-            .mapToObj { it to it.toString(16) }
-            .toList()
-            .toMap()
+        val hexMap = IntStream.range(1, 1_000_000).parallel().mapToObj { it to it.toString(16) }.toList().toMap()
 
         assertEquals(999_999, hexMap.size)
         assertEquals("ff", hexMap[255])
@@ -459,9 +442,7 @@ class kiaOne {
 
         // Measure Parallel
         val parTime = measureTimeMillis {
-            IntStream.range(1, 1_000_000)
-                .parallel()
-                .sum()
+            IntStream.range(1, 1_000_000).parallel().sum()
         }
 
         println("Sequential: ${seqTime}ms | Parallel: ${parTime}ms")
@@ -551,7 +532,38 @@ class SolutionTwo {
 }
 
 class Solution3 {
+    /**
+     * "../" : Move to the parent folder. (If in main, remain in main).
+     * "./"  : Remain in the same folder.
+     * "x/"  : Move to the child folder named x.
+     */
     fun minOperations(logs: Array<String>): Int {
+        var depth = 0
 
+        logs.forEach { log ->
+            when (log) {
+                "../" -> if (depth > 0) depth--
+                "./" -> { /* Do nothing */
+                }
+
+                else -> depth++
+            }
+        }
+
+        return depth
     }
 }
+
+class Solution4 {
+    fun reversePrefix(word: String, ch: Char): String {
+        val targetIndex = word.indexOf(ch)
+
+        if (targetIndex == -1) return word
+
+        return buildString {
+            append(word.substring(0, targetIndex + 1).reversed())
+            append(word.substring(targetIndex + 1))
+        }
+    }
+}
+
