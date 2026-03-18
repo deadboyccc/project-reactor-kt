@@ -358,11 +358,13 @@ class kiaOne {
         if (result == null) println("Success") else println("Failure: $result")
     }
 
+    //    @file:JvmName("Test")
+    @JvmOverloads
     fun <T> joinToString(
         collection: Collection<T>,
-        separator: String,
-        prefix: String,
-        postfix: String
+        separator: String = ",",
+        prefix: String = "",
+        postfix: String = "",
     ): String {
         val result = StringBuilder(prefix)
         for ((index, element) in collection.withIndex()) {
@@ -398,6 +400,7 @@ class kiaOne {
 
         println("Processed ${list.size} elements. Example: ${list.last()}")
     }
+
 
     @Test
     fun testStreamToMap() {
@@ -464,6 +467,91 @@ class kiaOne {
         println("Sequential: ${seqTime}ms | Parallel: ${parTime}ms")
         assertTrue(parTime < seqTime, "Parallel should be faster for large CPU-bound tasks")
     }
+
+    open class View {
+        open fun click() = println("View clicked")
+    }
+
+    class Button : View() {
+        override fun click() = println("Button clicked")
+    }
+
+    @Test
+    fun testOOPStuff() {
+        val b = Button()
+        b.click()
+        val a: View = Button()
+        a.click()
+
+    }
+
+    @Test
+    fun testDestructuringVarArgs() {
+        // 1. Define as an IntArray or convert the list to an array
+        val intArray = intArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+
+        // 2. Now the spread operator (*) will work
+        val secondArray = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, *intArray.toTypedArray())
+
+        // 3.
+        printInts(1, 2, 3, *intArray)
+
+    }
+
+    fun printInts(vararg ints: Int) {
+        for (int in ints) {
+            println(int)
+        }
+    }
+
+    @Test
+    fun revString() {
+
+    }
+
+    @Test
+    fun halvesEqual() {
+        val solutionTwo = SolutionTwo()
+        solutionTwo.halvesAreAlike("textbook").also { println(it) }
+    }
 }
 
+val String.lastChar: Char
+    get() = this.get(length - 1)
 
+class Solution {
+    fun reverseString(s: CharArray): Unit {
+        var left = 0
+        var right = s.size - 1
+
+        while (left < right) {
+            val temp = s[left]
+            s[left] = s[right]
+            s[right] = temp
+
+            left++
+            right--
+        }
+    }
+}
+
+class SolutionTwo {
+    fun halvesAreAlike(s: String): Boolean {
+        val vowels = setOf('a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U')
+
+        val mid = s.length / 2
+        val a1 = s.substring(0, mid)
+        val a2 = s.substring(mid)
+
+        val count1 = a1.count { it in vowels }
+        val count2 = a2.count { it in vowels }
+
+        return count1 == count2
+    }
+}
+
+class Solution3 {
+    fun minOperations(logs: Array<String>): Int {
+
+    }
+}
