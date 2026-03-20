@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.nio.file.Path
+import java.util.*
 import java.util.stream.Collectors
 import java.util.stream.IntStream
 import kotlin.io.path.*
@@ -604,13 +605,16 @@ interface INestedInteger {
  */
 
 class NestedIterator(nestedList: List<NestedInteger>) {
+    private val stack: Deque<NestedInteger> = java.util.ArrayDeque()
     fun next(): Int {
-        return 1
+        return 1;
+
 
     }
 
     fun hasNext(): Boolean {
         return true;
+
 
     }
 }
