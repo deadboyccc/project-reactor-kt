@@ -8,7 +8,7 @@ class LeetCode {
     fun testMax() {
         maxOf(10, 20).also { println(it) }
     }
-    // reduce, fold, scan
+    // reduce, fold, scan, windowed 
 
     // map methods getOrPut getOrDefault etc <String, List<String>>
 
