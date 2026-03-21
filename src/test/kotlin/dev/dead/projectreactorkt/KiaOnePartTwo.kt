@@ -1,5 +1,6 @@
 package dev.dead.projectreactorkt
 
+import kotlin.math.min
 import kotlin.test.Test
 
 
@@ -38,6 +39,28 @@ class KiaOnePartTwo {
 
 }
 
+
+class SolutionSS {
+    fun maxArea(height: IntArray): Int {
+        var p1 = 0
+        var p2 = height.size - 1
+        var max = 0
+
+        while (p1 < p2) {
+            val area = (p2 - p1) * min(height[p1], height[p2])
+            max = maxOf(max, area)
+
+            // move the shorter line
+            if (height[p1] < height[p2]) {
+                p1++
+            } else {
+                p2--
+            }
+        }
+
+        return max
+    }
+}
 class SolutionLL {
     fun lengthOfLongestSubstring(s: String): Int {
         if (s.isEmpty()) return 0
