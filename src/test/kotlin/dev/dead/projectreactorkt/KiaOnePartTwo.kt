@@ -3,6 +3,7 @@ package dev.dead.projectreactorkt
 import kotlin.test.Test
 
 
+// 3.5.1 splitting strings ->
 class KiaOnePartTwo {
     @Test
     fun testRange() {
@@ -13,9 +14,78 @@ class KiaOnePartTwo {
     @Test
     fun testTest() {
         val solution88 = Solution88()
-        solution88.longestConsecutive(intArrayOf(100, 4, 200, 1, 3, 2))
+//        solution88.longestConsecutive(intArrayOf(100, 4, 200, 1, 3, 2))
+        val solutionL = SolutionL()
+        solutionL.lengthOfLongestSubstring("au").also { println(it) }
     }
 
+    @Test
+    fun testUntil() {
+        val stirng = "au"
+        for (i in stirng.indices) {
+            println(i)
+        }
+        println(stirng)
+        (1..5).forEach { print("$it ") }
+    }
+
+    @Test
+    fun testTestTest() {
+//        val solution88 = Solution88()
+//        solution88.longestConsecutive(intArrayOf(100, 4, 200, 1, 3, 2))
+        val solutionL = SolutionLL().lengthOfLongestSubstring("au").also { println(it) }
+    }
+
+}
+
+class SolutionLL {
+    fun lengthOfLongestSubstring(s: String): Int {
+        if (s.isEmpty()) return 0
+        var maxLen = 0
+
+        for (i in s.indices) {
+            val seen = mutableSetOf<Char>()
+            for (j in i until s.length) {
+                if (seen.contains(s[j])) {
+                    break
+                }
+                seen.add(s[j])
+                // Update the maximum length found so far
+                val currentWindowSize = j - i + 1
+                if (currentWindowSize > maxLen) {
+                    maxLen = currentWindowSize
+                }
+            }
+        }
+        return maxLen
+    }
+}
+
+//3
+// We need to find the length of the window of a unique substring (longest, unique substring)
+class SolutionL {
+    fun lengthOfLongestSubstring(s: String): Int {
+        if (s.isEmpty()) return 0
+        if (s.length == 1) return 1
+
+        val map = mutableMapOf<Char, Boolean>()
+        var longest: Int = 0
+
+        for (i in 0 until s.length) {
+            // Label comes BEFORE the loop
+            inner@ for (j in i + 1 until s.length) {
+                if (map[s[j]] == true) {
+                    // Break references the label
+                    map.clear()
+                    break@inner
+                }
+                map.put(s[j], true)
+                longest++
+            }
+        }
+
+        return longest
+    }
 }
 
 class Solution9 {
