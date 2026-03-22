@@ -1,6 +1,7 @@
 package dev.dead.projectreactorkt
 
 import java.util.*
+import kotlin.math.max
 import kotlin.test.Test
 
 
@@ -49,6 +50,40 @@ class LeetCode {
 
 }
 
+
+fun getLevelOrderListCleaned(root: TreeNode?): List<Int> {
+    val startNode = root ?: return emptyList()
+    val queue = ArrayDeque<TreeNode>()
+    queue.addLast(startNode) // Join the back of the line
+
+    return buildList {
+        while (queue.isNotEmpty()) {
+            val node = queue.removeFirst() // Leave from the front of the line
+            add(node.value)
+
+            // Add children to the back of the line
+            node.left?.let { queue.addLast(it) }
+            node.right?.let { queue.addLast(it) }
+        }
+    }
+}
+
+fun getPreOrderListCleaned(root: TreeNode?): List<Int> {
+    val startNode = root ?: return emptyList()
+    val stack = ArrayDeque<TreeNode>()
+    stack.addLast(startNode) // Push to the top
+
+    return buildList {
+        while (stack.isNotEmpty()) {
+            val node = stack.removeLast() // Pop from the top
+            add(node.value)
+
+            // Right then Left, so Left is on "top" (at the end)
+            node.right?.let { stack.addLast(it) }
+            node.left?.let { stack.addLast(it) }
+        }
+    }
+}
 fun depthFirstSearchStackBased(root: TreeNode?) {
     val arr = mutableListOf<Int>()
     val stack = Stack<TreeNode>()
@@ -91,6 +126,7 @@ fun getLevelOrderList(root: TreeNode?): List<Int> {
 
     // Using ArrayDeque as a Queue (FIFO)
     val queue = ArrayDeque<TreeNode>().apply { add(startNode) }
+
 
     return buildList {
         while (queue.isNotEmpty()) {
@@ -135,8 +171,33 @@ fun printPostOrder(root: TreeNode?) {
 
 class SolutionF {
     fun maxDepth(root: TreeNode?): Int {
-        // dfs
-        return 1;
+        if (root == null) return 0
 
+        var depth = 0
+        val queue = ArrayDeque<TreeNode>()
+        queue.addLast(root)
+
+        while (queue.isNotEmpty()) {
+            val levelSize = queue.size
+
+            depth++
+
+            for (i in 0 until levelSize) {
+                val node = queue.removeFirst()
+
+                node.left?.let { queue.addLast(it) }
+                node.right?.let { queue.addLast(it) }
+            }
+        }
+
+        return depth
+    }
+}
+
+class SolutionLLOL {
+    fun maxDepth(root: TreeNode?): Int {
+        if (root == null) return 0
+
+        return 1 + max(maxDepth(root.left), maxDepth(root.right))
     }
 }
