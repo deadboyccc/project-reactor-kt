@@ -3,9 +3,16 @@ package dev.dead.projectreactorkt
 class LeetStrings {
 }
 
-class Solution {
-    fun checkInclusion(s1: String, s2: String): Boolean {
+// the size of s1 is the sliding window = fixed
 
+class SolutionFF {
+    fun checkInclusion(s1: String, s2: String): Boolean {
+        // Map< Char -> count > for target frequencies
+        val s1Counts = s1.groupingBy { it }.eachCount()
+
+        // s2 windowed at s1.length -> Map< Char -> count > for each window -> any match
+        return s2.windowedSequence(s1.length)
+            .any { it.groupingBy { char -> char }.eachCount() == s1Counts }
     }
 }
 
