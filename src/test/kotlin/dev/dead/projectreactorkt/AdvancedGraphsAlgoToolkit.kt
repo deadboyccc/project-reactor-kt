@@ -70,16 +70,23 @@ class AdvancedGraphsAlgoToolkit {
      *  - Always process the unvisited node with the smallest known distance first.
      *  - When a shorter path to a neighbor is found, push a new entry for it. */
     fun dijkstra(start: Char): Map<Char, Int> {
-        // each graph node = node + distance ( cumulative )
+
+
         val minHeap = PriorityQueue<GraphNode>(compareBy { it.distance })
-        val visited = hashSetOf(start)
+        val visited = hashSetOf<Char>()
         val resultMap = mutableMapOf<Char, Int>().apply { put(start, 0) }
+
+        minHeap.add(GraphNode(start, 0))
+
         while (minHeap.isNotEmpty()) {
+
             val currentNode = minHeap.poll()
+
             if (visited.contains(currentNode.label)) {
                 continue
             }
             visited.add(currentNode.label)
+
             adjGraph[currentNode.label]?.forEach { edge ->
                 val newDistance = edge.weight + currentNode.distance
                 if (newDistance < resultMap.getOrDefault(edge.dst, Int.MAX_VALUE)) {
